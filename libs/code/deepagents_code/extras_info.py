@@ -105,7 +105,7 @@ SANDBOX_EXTRAS: frozenset[str] = frozenset(
 )
 """Optional extras that add sandbox integrations."""
 
-STANDALONE_EXTRAS: frozenset[str] = frozenset({"quickjs"})
+STANDALONE_EXTRAS: frozenset[str] = frozenset({"quickjs", "video"})
 """Optional extras that don't fit the provider/sandbox taxonomy.
 
 These integrations layer onto the main agent (e.g. a JS REPL via
