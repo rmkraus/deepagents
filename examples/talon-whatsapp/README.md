@@ -16,7 +16,7 @@ docker compose up
 
 Scan the QR code printed by the bridge. The default exposure mode is `self`, so only messages sent by the paired WhatsApp account trigger the agent. Use `allowlist` or `open` only when you intentionally want other chats to trigger the agent.
 
-Voice transcription is enabled in `.env.example`. The Docker example installs `ffmpeg` and the Talon `speech` extra so inbound WhatsApp voice notes are transcribed locally with NVIDIA Parakeet through Transformers before reaching the agent. The first voice message can be slow because the ASR model is downloaded lazily. Set `DEEPAGENTS_TALON_VOICE_TRANSCRIPTION_DEVICE=cuda` when running on a GPU-enabled host.
+Voice transcription is enabled in `.env.example`. The Docker example installs `ffmpeg` plus the Talon `speech` and `video` extras so inbound WhatsApp voice notes are transcribed locally and video files can be decoded by Deep Agents `read_file`. The first voice message can be slow because the ASR model is downloaded lazily. Set `DEEPAGENTS_TALON_VOICE_TRANSCRIPTION_DEVICE=cuda` when running on a GPU-enabled host.
 
 Cron records, downloaded inbound media, and WhatsApp session state persist under `~/agent-workspace/.deepagents/`. The agent's default working directory is `/workspace`, so files it creates are written into `~/agent-workspace/` on the host.
 
@@ -34,7 +34,7 @@ cd ../../libs/talon/deepagents_talon/channels/whatsapp_bridge
 npm install
 
 cd ../../../..
-uv sync --directory libs/talon --extra speech
+uv sync --directory libs/talon --extra speech --extra video
 cp examples/talon-whatsapp/AGENTS.md ~/.deepagents/whatsapp-local/agent/AGENTS.md
 export DEEPAGENTS_TALON_WORKSPACE=~/agent-workspace
 uv run --directory libs/talon deepagents-talon --whatsapp
