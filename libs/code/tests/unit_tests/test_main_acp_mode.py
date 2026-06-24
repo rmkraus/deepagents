@@ -23,6 +23,8 @@ def _make_acp_args(**overrides: object) -> argparse.Namespace:
         mcp_config=None,
         no_mcp=False,
         trust_project_mcp=False,
+        auto_approve=False,
+        shell_allow_list=None,
     )
     for key, value in overrides.items():
         setattr(args, key, value)
@@ -175,6 +177,64 @@ def test_acp_mode_omits_web_search_without_tavily() -> None:
     assert call_kwargs["tools"] == [fetch_tool, thread_tool]
     assert call_kwargs["mcp_server_info"] == []
     assert call_kwargs["checkpointer"] is not None
+
+
+@pytest.mark.parametrize(
+    ("args_overrides", "expected_auto_approve", "expected_interrupt", "expected_list"),
+    [
+        ({"auto_approve": True}, True, False, None),
+        ({"shell_allow_list": "all"}, True, False, None),
+        ({"shell_allow_list": "ls,cat"}, False, True, ["ls", "cat"]),
+    ],
+)
+def test_acp_mode_forwards_shell_approval_flags_to_agent(
+    args_overrides: dict[str, object],
+    expected_auto_approve: bool,
+    expected_interrupt: bool,
+    expected_list: list[str] | None,
+) -> None:
+    """ACP mode should honor the same shell approval CLI flags as other modes."""
+    args = _make_acp_args(**args_overrides)
+    model_obj = object()
+    model_result = SimpleNamespace(
+        model=model_obj,
+        provider="anthropic",
+        model_name="claude-sonnet-4-6",
+        apply_to_settings=MagicMock(),
+    )
+    server = object()
+    run_agent = AsyncMock(return_value=None)
+    resolve_mcp_tools = AsyncMock(return_value=([], None, []))
+
+    with (
+        patch.object(sys, "argv", ["deepagents", "--acp"]),
+        patch(
+            "deepagents_code.main.check_cli_dependencies",
+            side_effect=AssertionError("check_cli_dependencies should be skipped"),
+        ),
+        patch("deepagents_code.main.parse_args", return_value=args),
+        patch("deepagents_code.config.settings", new=SimpleNamespace(has_tavily=False)),
+        patch("deepagents_code.model_config.save_recent_model", return_value=True),
+        patch("deepagents_code.model_config.touch_recent_model", return_value=True),
+        patch("deepagents_code.config.create_model", return_value=model_result),
+        patch(
+            "deepagents_code.mcp_tools.resolve_and_load_mcp_tools", resolve_mcp_tools
+        ),
+        patch(
+            "deepagents_code.agent.create_cli_agent", return_value=("graph", object())
+        ) as mock_create_agent,
+        patch("deepagents_acp.server.AgentServerACP", return_value=server),
+        patch("acp.run_agent", run_agent),
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        cli_main()
+
+    assert exc_info.value.code == 0
+    mock_create_agent.assert_called_once()
+    call_kwargs = mock_create_agent.call_args.kwargs
+    assert call_kwargs["auto_approve"] is expected_auto_approve
+    assert call_kwargs["interrupt_shell_only"] is expected_interrupt
+    assert call_kwargs["shell_allow_list"] == expected_list
 
 
 def test_non_acp_mode_checks_dependencies_before_parsing() -> None:

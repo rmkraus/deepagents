@@ -1808,6 +1808,8 @@ async def _run_acp_cli_async(
     mcp_config_path: str | None = None,
     no_mcp: bool = False,
     trust_project_mcp: bool | None = None,
+    auto_approve: bool = False,
+    shell_allow_list: list[str] | None = None,
 ) -> int:
     """Run ACP server mode and return a process exit code.
 
@@ -1821,6 +1823,10 @@ async def _run_acp_cli_async(
         mcp_config_path: Optional path to MCP servers JSON configuration file.
         no_mcp: Disable all MCP tool loading.
         trust_project_mcp: Controls project-level stdio server trust.
+        auto_approve: Disable ACP HITL approval prompts for tool calls.
+        shell_allow_list: Restrictive shell command allow-list. When provided,
+            ACP disables general HITL interrupts and validates shell commands
+            through shell allow-list middleware instead.
 
     Returns:
         Exit code for ACP mode.
@@ -1893,6 +1899,9 @@ async def _run_acp_cli_async(
             mcp_server_info=mcp_server_info,
             checkpointer=InMemorySaver(),
             async_subagents=async_subagents,
+            auto_approve=auto_approve,
+            interrupt_shell_only=shell_allow_list is not None and not auto_approve,
+            shell_allow_list=shell_allow_list,
         )
     except Exception as exc:
         sys.stderr.write(f"Error: failed to create agent: {exc}\n")
@@ -2390,6 +2399,21 @@ def cli_main() -> None:
                 sys.stderr.flush()
                 sys.exit(2)
 
+            auto_approve = bool(getattr(args, "auto_approve", False))
+            shell_allow_list = None
+            raw_shell_allow_list = getattr(args, "shell_allow_list", None)
+            if raw_shell_allow_list:
+                from deepagents_code.config import (
+                    SHELL_ALLOW_ALL,
+                    parse_shell_allow_list,
+                )
+
+                parsed_shell_allow_list = parse_shell_allow_list(raw_shell_allow_list)
+                if isinstance(parsed_shell_allow_list, type(SHELL_ALLOW_ALL)):
+                    auto_approve = True
+                else:
+                    shell_allow_list = parsed_shell_allow_list
+
             exit_code = asyncio.run(
                 _run_acp_cli_async(
                     assistant_id=assistant_id,
@@ -2401,6 +2425,8 @@ def cli_main() -> None:
                     mcp_config_path=getattr(args, "mcp_config", None),
                     no_mcp=getattr(args, "no_mcp", False),
                     trust_project_mcp=getattr(args, "trust_project_mcp", False),
+                    auto_approve=auto_approve,
+                    shell_allow_list=shell_allow_list,
                 )
             )
             sys.exit(exit_code)
