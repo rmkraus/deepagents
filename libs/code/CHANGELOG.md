@@ -2,6 +2,13 @@
 
 # Deep Agents Code Changelog
 
+## [0.1.23](https://github.com/langchain-ai/deepagents/compare/deepagents-code==0.1.22...deepagents-code==0.1.23) (2026-06-24)
+
+
+### Features
+
+* **code:** add Opus 4.8 to recommended models ([#4204](https://github.com/langchain-ai/deepagents/issues/4204)) ([8faf2b0](https://github.com/langchain-ai/deepagents/commit/8faf2b025f8429481a41a3e65544d26614e53589))
+
 ## [0.1.22](https://github.com/langchain-ai/deepagents/compare/deepagents-code==0.1.21...deepagents-code==0.1.22) (2026-06-24)
 
 ### Features
