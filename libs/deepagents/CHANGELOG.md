@@ -2,6 +2,13 @@
 
 # Deep Agents Changelog
 
+## [0.6.12](https://github.com/langchain-ai/deepagents/compare/deepagents==0.6.11...deepagents==0.6.12) (2026-06-24)
+
+
+### Bug Fixes
+
+* **sdk:** preserve media references in summarization archives ([#3990](https://github.com/langchain-ai/deepagents/issues/3990)) ([2d6fb53](https://github.com/langchain-ai/deepagents/commit/2d6fb53cd8c94680a42fa9d7041509ff78050616))
+
 ## [0.6.11](https://github.com/langchain-ai/deepagents/compare/deepagents==0.6.10...deepagents==0.6.11) (2026-06-18)
 
 ### Bug Fixes
